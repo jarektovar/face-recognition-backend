@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
 const cors = require('cors');
 const recognitionRouter = require('./routes/recognition');
 
@@ -22,8 +23,8 @@ mongoose.connect(MONGO_URI, {
 });
 
 // Middlewares
-app.use(express.json());
-app.use('/api/recognition', recognitionRouter);
+app.use(bodyParser.json({ limit: '25mb' }));
+app.use('/api/recognize', recognitionRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
