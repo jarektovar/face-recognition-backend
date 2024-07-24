@@ -3,7 +3,7 @@ const faceapi = require('face-api.js');
 const canvas = require('canvas');
 const path = require('path');
 const { Canvas, Image, ImageData } = canvas;
-const Student = require('../models/student'); // Ajusta la ruta según sea necesario
+const Student = require('../models/Student');
 const { Buffer } = require('buffer');
 
 faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
@@ -25,12 +25,10 @@ const loadModels = async () => {
 
 loadModels();
 
-// Ruta para reconocimiento facial
 router.post('/', async (req, res) => {
   try {
     const { image } = req.body;
     if (!image) {
-      console.log('No image provided');
       return res.status(400).json({ error: 'No image provided' });
     }
 
@@ -40,10 +38,9 @@ router.post('/', async (req, res) => {
     let queryImageCanvas;
     try {
       queryImageCanvas = await canvas.loadImage(buffer);
-      console.log('Image loaded into canvas');
+      console.log('Query image loaded into canvas');
     } catch (error) {
-      console.error('Error loading image into canvas:', error);
-      return res.status(400).json({ error: 'Error loading image into canvas' });
+      return res.status(400).json({ error: 'Error loading query image into canvas' });
     }
 
     let queryDetection;
@@ -51,12 +48,10 @@ router.post('/', async (req, res) => {
       queryDetection = await faceapi.detectSingleFace(queryImageCanvas).withFaceLandmarks().withFaceDescriptor();
       console.log('Face detected in query image');
     } catch (error) {
-      console.error('Error detecting face:', error);
-      return res.status(400).json({ error: 'Error detecting face' });
+      return res.status(400).json({ error: 'Error detecting face in query image' });
     }
 
     if (!queryDetection) {
-      console.log('No face detected in the uploaded image');
       return res.status(400).json({ error: 'Face not detected in the uploaded image' });
     }
 
@@ -68,25 +63,25 @@ router.post('/', async (req, res) => {
       let referenceImageCanvas;
       try {
         referenceImageCanvas = await canvas.loadImage(referenceImage);
-        console.log('Reference image loaded into canvas for student:', student._id);
+        console.log(`Reference image loaded into canvas for student: ${student._id}`);
       } catch (error) {
-        console.error('Error loading reference image into canvas:', error);
+        console.error(`Error loading reference image for student ${student._id}:`, error);
         continue;
       }
 
       let referenceDetection;
       try {
         referenceDetection = await faceapi.detectSingleFace(referenceImageCanvas).withFaceLandmarks().withFaceDescriptor();
-        console.log('Reference detection result for student:', student._id, referenceDetection);
+        console.log(`Reference detection result for student ${student._id}`);
       } catch (error) {
-        console.error('Error detecting face in reference image for student:', student._id, error);
+        console.error(`Error detecting face in reference image for student ${student._id}:`, error);
         continue;
       }
 
       if (referenceDetection) {
         const distance = faceapi.euclideanDistance(referenceDetection.descriptor, queryDetection.descriptor);
-        console.log('Distance between query and reference for student:', student._id, distance);
-        if (distance < 0.6) { // Ajusta el umbral según tus necesidades
+        console.log(`Distance between query and reference for student ${student._id}: ${distance}`);
+        if (distance < 0.7) {
           match = student;
           break;
         }
@@ -94,10 +89,10 @@ router.post('/', async (req, res) => {
     }
 
     if (match) {
-      console.log('Match found:', match);
-      res.json({ match: true, student: match });
+      console.log(`Estudiante encontrado: ${match.nombre_name}`);
+      res.json({ match: true, student: { name: match.nombre_name } });
     } else {
-      console.log('No match found');
+      console.log('Estudiante No encontrado');
       res.json({ match: false });
     }
   } catch (err) {
