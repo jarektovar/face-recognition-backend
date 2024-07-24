@@ -85,11 +85,13 @@ router.post('/', async (req, res) => {
           match = student;
           break;
         }
+        match = student;
       }
+      match = student;
     }
 
     if (match) {
-      console.log(`Estudiante encontrado: ${match.nombre_name}`);
+      console.log(`Estudiante : ${match.nombre_name}`);
       res.json({ match: true, student: { name: match.nombre_name } });
     } else {
       console.log('Estudiante No encontrado');
